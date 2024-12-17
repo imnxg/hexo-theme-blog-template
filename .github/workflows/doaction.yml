@@ -1,0 +1,59 @@
+
+name: 部署文档
+
+on:
+  push:
+    branches:
+      # 确保这是你正在使用的分支名称
+      #- main  # 主分支有 push 行为时就触发这个 action
+      - dev
+
+jobs:
+  deploy-gh-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+      # 拉取 github 仓库代码
+        uses: actions/checkout@v4
+        with:
+         # “最近更新时间” 等 git 日志相关信息，需要拉取全部提交记录
+          fetch-depth: 0
+          # 如果你文档需要 Git 子模块，取消注释下一行
+          # submodules: true
+
+      # 设定 node 环境
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+         # 选择要使用的 node 版本
+          # node-version: ${{ matrix.node-version }}
+          node-version: 20.7.0
+          # 设置发包 npm 地址仓库
+          registry-url: https://registry.npmjs.org
+          # 缓存 npm 依赖
+          cache: npm
+      # 安装依赖，相当于 npm ci
+      - name: Install dependencies 📦️
+        run: npm install
+        
+      # 执行构建步骤
+      # 运行构建脚本
+      - name: 构建文档
+        env:
+          NODE_OPTIONS: --max_old_space_size=8192
+        run: |-
+          npm run build
+        #  > dist/.nojekyll
+        #  > src/.vuepress/dist/.nojekyll
+
+      # 查看 workflow 的文档来获取更多信息
+      # @see https://github.com/crazy-max/ghaction-github-pages
+      - name: 部署到Github
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.HEXO_DEPLOY }}
+          repository-name: xxx/xxx.github.io # 公共仓库，格式：GitHub 用户名/仓库名
+          branch: gh-pages  # 分支，填 gh-pages 就行
+          folder: ./public # 部署 public 目录下的文件
+
+
